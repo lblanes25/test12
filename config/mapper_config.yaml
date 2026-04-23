@@ -1,68 +1,67 @@
-# Mapper configuration.
+# Mapper configuration for IAG Issues backfill.
 #
-# Convention (carried from the prior project): ALL column names go here.
-# Never hardcode column names in the code — enterprise exports change
-# header casing / punctuation / naming, and yaml is the one place to
-# react to that without re-deploying.
+# All column names live here, never in code (enterprise exports change
+# header casing/naming and yaml is the seam to react without redeploying).
 
 # =============================================================================
-# Input source data (events / issues / items being mapped to the taxonomy)
+# Source workbook (the IAG file holds source data + all three taxonomies)
 # =============================================================================
 source:
-  # File glob pattern in data/input/. Newest timestamp wins.
-  file_pattern: "source_*.xlsx"
-
-  # Column names in the source file. Adjust to match your enterprise export.
-  id: "Event ID"
-  entity_id: "Audit Entity ID"          # optional — used for entity-scoped filtering
-  title: "Event Title"
-  description: "Event Description / Summary"
-  classification: "Final Event Classification"  # optional — severity/tier label
-  status: "Event Status"                # optional — closed items are excluded
-
-# =============================================================================
-# Reference taxonomy file (what the source data is being mapped TO)
-# =============================================================================
-taxonomy:
-  file_name: "Taxonomy.xlsx"
-  # Column names in the taxonomy file.
-  l1: "L1"
-  l2: "L2"
-  l2_definition: "L2 Definition"
-  # Optional L3/L4 — if present, their text is folded into the parent L2's
-  # semantic vector for richer matching. Safe to omit.
-  l3: "L3"
-  l3_definition: "L3 Definition"
-  l4: "L4"
-  l4_definition: "L4 Definition"
+  file_pattern: "IAG Issues*.xlsx"
+  sheet_name: "Archer Search Report"
+  id_col: "Issue ID"
+  title_col: "Issue Title"
+  # Text columns concatenated (in order) to form each row's input text for
+  # similarity scoring. Add or remove as needed.
+  text_cols:
+    - "Issue Description"
+    - "Root Cause Description"
 
 # =============================================================================
-# spaCy semantic similarity
+# Targets: each entry describes one column to fill on the source sheet.
+#
+# Required keys per target:
+#   target_col            — column on source sheet to fill (only when blank)
+#   taxonomy_sheet        — sheet name in the same workbook
+#   taxonomy_parent_col   — parent column in the taxonomy
+#   taxonomy_child_col    — column whose value is written to target_col
+#   taxonomy_def_col      — definition/description column folded into vector text
+#
+# Optional keys:
+#   source_constraint_col — column on source sheet whose value must equal the
+#                           taxonomy_parent_col value for a row to be a candidate.
+#                           Omit (or null) for unconstrained matching.
+#   parent_fill_col       — column on source sheet to also fill with the
+#                           taxonomy_parent_col of the chosen child. Omit if
+#                           the parent isn't written back.
 # =============================================================================
-# en_core_web_lg is bigger but more accurate; en_core_web_md is the small
+targets:
+  - name: "Issue Subtheme"
+    target_col: "Issue Subtheme"
+    parent_fill_col: "Issue Theme"
+    taxonomy_sheet: "Theme Taxonomy"
+    taxonomy_parent_col: "Issue Theme"
+    taxonomy_child_col: "Issue Subtheme"
+    taxonomy_def_col: "Definition"
+
+  - name: "Root Cause Subtheme"
+    target_col: "Root Cause Subtheme"
+    taxonomy_sheet: "Root Cause Taxonomy"
+    taxonomy_parent_col: "Root Cause Theme"
+    taxonomy_child_col: "Root Cause Subtheme"
+    taxonomy_def_col: "Description"
+    source_constraint_col: "Root Cause"
+
+  - name: "Risk Level 4"
+    target_col: "Risk Level 4"
+    taxonomy_sheet: "L4 Risk Taxonomy"
+    taxonomy_parent_col: "Risk Level 2"
+    taxonomy_child_col: "Risk Level 4"
+    taxonomy_def_col: "L4 Definition"
+    source_constraint_col: "Risk Level 2"
+
+# =============================================================================
+# spaCy model. en_core_web_lg is more accurate; en_core_web_md is the small
 # fallback. Download with `python -m spacy download <model>`.
+# =============================================================================
 spacy_model: "en_core_web_lg"
-
-# =============================================================================
-# Thresholds
-# =============================================================================
-# Minimum cosine similarity score for Match 1 to be considered valid.
-# Below this, the row becomes "No Match".
-min_similarity_score: 0.50
-
-# Score threshold for "Strong" confidence label on a Suggested Match.
-high_similarity_score: 0.75
-
-# Margin threshold: if (Match 1 score - Match 2 score) is below this, the
-# row is flagged "Needs Review" (too close to rank confidently). Set to
-# null to auto-tune from the data's P25 margin (clamped to [0.01, 0.05]).
-ambiguity_margin_threshold: null
-
-# =============================================================================
-# Status filter (optional — items with these statuses are excluded from mapping)
-# =============================================================================
-closed_statuses:
-  - "closed"
-  - "canceled"
-  - "draft"
-  - "pending cancelation"
