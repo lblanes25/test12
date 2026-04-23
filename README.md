@@ -60,6 +60,12 @@ Everything user-facing lives in `config/mapper_config.yaml`:
 - **`source.sheet_name`** — which tab in the workbook holds the issues.
 - **`source.text_cols`** — list of column names whose text is concatenated
   to form each row's input for similarity scoring.
+- **`source.explode_on`** — list of column names whose cells may contain
+  multiple newline-separated values. Each such row is expanded into one
+  row per value before mapping (cartesian product if more than one explode
+  column has multiple values). Output workbook will have more rows than
+  input. The same Issue ID will appear on multiple rows when its exploded
+  column had multiple values.
 - **`targets`** — one entry per column to fill. Each describes:
   - `target_col` — column on source sheet to fill (only when blank).
   - `taxonomy_sheet` / `taxonomy_parent_col` / `taxonomy_child_col` /

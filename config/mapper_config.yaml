@@ -17,6 +17,13 @@ source:
     - "Issue Description"
     - "Root Cause Description"
 
+  # Columns whose cells may contain multiple newline-separated values.
+  # Each such row is exploded into one row per value (cartesian product if
+  # more than one explode column has multiple values). All other cells are
+  # copied verbatim. Output workbook will have more rows than input.
+  explode_on:
+    - "Risk Level 2"
+
 # =============================================================================
 # Targets: each entry describes one column to fill on the source sheet.
 #
