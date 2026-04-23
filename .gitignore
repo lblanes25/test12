@@ -1,0 +1,27 @@
+# Python
+__pycache__/
+*.pyc
+
+# IDE
+.idea/
+.vscode/
+
+# Virtual environment
+.venv/
+venv/
+
+# Data files — input and output are local, not committed
+data/input/*.xlsx
+data/input/*.csv
+data/output/*.xlsx
+data/output/*.csv
+data/output/*.html
+
+# Logs
+logs/*.txt
+
+# Claude Code
+.claude/
+
+# Local archive (scratch area — never staged)
+archive/

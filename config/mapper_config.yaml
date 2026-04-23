@@ -1,0 +1,68 @@
+# Mapper configuration.
+#
+# Convention (carried from the prior project): ALL column names go here.
+# Never hardcode column names in the code — enterprise exports change
+# header casing / punctuation / naming, and yaml is the one place to
+# react to that without re-deploying.
+
+# =============================================================================
+# Input source data (events / issues / items being mapped to the taxonomy)
+# =============================================================================
+source:
+  # File glob pattern in data/input/. Newest timestamp wins.
+  file_pattern: "source_*.xlsx"
+
+  # Column names in the source file. Adjust to match your enterprise export.
+  id: "Event ID"
+  entity_id: "Audit Entity ID"          # optional — used for entity-scoped filtering
+  title: "Event Title"
+  description: "Event Description / Summary"
+  classification: "Final Event Classification"  # optional — severity/tier label
+  status: "Event Status"                # optional — closed items are excluded
+
+# =============================================================================
+# Reference taxonomy file (what the source data is being mapped TO)
+# =============================================================================
+taxonomy:
+  file_name: "Taxonomy.xlsx"
+  # Column names in the taxonomy file.
+  l1: "L1"
+  l2: "L2"
+  l2_definition: "L2 Definition"
+  # Optional L3/L4 — if present, their text is folded into the parent L2's
+  # semantic vector for richer matching. Safe to omit.
+  l3: "L3"
+  l3_definition: "L3 Definition"
+  l4: "L4"
+  l4_definition: "L4 Definition"
+
+# =============================================================================
+# spaCy semantic similarity
+# =============================================================================
+# en_core_web_lg is bigger but more accurate; en_core_web_md is the small
+# fallback. Download with `python -m spacy download <model>`.
+spacy_model: "en_core_web_lg"
+
+# =============================================================================
+# Thresholds
+# =============================================================================
+# Minimum cosine similarity score for Match 1 to be considered valid.
+# Below this, the row becomes "No Match".
+min_similarity_score: 0.50
+
+# Score threshold for "Strong" confidence label on a Suggested Match.
+high_similarity_score: 0.75
+
+# Margin threshold: if (Match 1 score - Match 2 score) is below this, the
+# row is flagged "Needs Review" (too close to rank confidently). Set to
+# null to auto-tune from the data's P25 margin (clamped to [0.01, 0.05]).
+ambiguity_margin_threshold: null
+
+# =============================================================================
+# Status filter (optional — items with these statuses are excluded from mapping)
+# =============================================================================
+closed_statuses:
+  - "closed"
+  - "canceled"
+  - "draft"
+  - "pending cancelation"

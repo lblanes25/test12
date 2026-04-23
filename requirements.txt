@@ -1,0 +1,9 @@
+pandas>=2.0
+numpy>=1.24
+pyyaml>=6.0
+openpyxl>=3.1
+spacy>=3.7
+
+# After pip install, download the spaCy model once:
+#     python -m spacy download en_core_web_lg
+# (or en_core_web_md if disk/memory is tight; see config for the setting)
